@@ -16,20 +16,19 @@ class Config(object):
     HOST = os.environ.get("HOST", "127.0.0.1")
     PORT = os.environ.get("PORT", 8080)
 
-    DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster")
+    #DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster")
+    DATA_DIR = os.environ.get("DATA_DIR", "/tmp")
     DATABASE_URI = os.path.join(DATA_DIR, "db", "db.json")
-    SALT_MASTER_IPADDR = os.environ.get("SALT_MASTER_IPADDR", "")
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
-    DOCKER_CERT_DIR = os.path.join(DATA_DIR, "docker_certs")
     CUSTOM_LDAP_SCHEMA_DIR = os.path.join(
         DATA_DIR, "custom", "opendj", "schema",
     )
-    SSL_CERT_DIR = os.path.join(DATA_DIR, "ssl_certs")
     OXAUTH_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxauth")
     OXTRUST_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxtrust")
     OXIDP_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxidp")
+    #DRIVERS = ['generic','amazonec2','digitalocean', 'google']
 
 
 class ProdConfig(Config):
@@ -41,6 +40,7 @@ class DevConfig(Config):
     """Development configuration.
     """
     DEBUG = True
+    DATA_DIR = Config.APP_DIR + '/data'
     DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
 
 

@@ -114,7 +114,7 @@ def daemon(ctx, pidfile, logfile):
 def runserver():
     """Run development server with auto-reloader.
     """
-    check_salt()
+    #check_salt()
     configure_global_logging()
     app = create_app()
     run_app(app)

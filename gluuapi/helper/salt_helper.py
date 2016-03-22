@@ -18,32 +18,35 @@ SALT_EVENT_TIMEOUT = 2 * 60
 
 
 class SaltHelper(object):
-    client = salt.client.LocalClient()
-    key_store = salt.key.Key(client.opts)
-    event = salt.utils.event.get_event(
-        "master",
-        sock_dir=client.opts["sock_dir"],
-        transport=client.opts["transport"],
-        opts=client.opts,
-    )
+    client = None #salt.client.LocalClient()
+    key_store = None #salt.key.Key(client.opts)
+    event = None #salt.utils.event.get_event(
+        #"master",
+        #sock_dir=client.opts["sock_dir"],
+        #transport=client.opts["transport"],
+        #opts=client.opts,
+    #)
 
     def register_minion(self, key):
         """Registers a minion.
 
         :param key: Key used by minion; typically a container ID (short format)
         """
-        return self.key_store.accept(key, include_rejected=True)
+        pass
+        #return self.key_store.accept(key, include_rejected=True)
 
     def unregister_minion(self, key):
         """Unregisters a minion.
 
         :param key: Key used by minion; typically a container ID (short format)
         """
-        return self.key_store.delete_key(key)
+        pass
+        #return self.key_store.delete_key(key)
 
     def is_minion_registered(self, key):
-        keys = self.key_store.list_keys()
-        return key in keys["minions"]
+        pass
+        #keys = self.key_store.list_keys()
+        #return key in keys["minions"]
 
     def _file_dict(self, fn_):
         """Take a path and return the contents of the file as a string
@@ -94,17 +97,20 @@ class SaltHelper(object):
     def cmd(self, tgt, fun, arg=()):
         """Runs synchronous command in minion.
         """
-        return self.client.cmd(tgt, fun, arg)
+        pass
+        #return self.client.cmd(tgt, fun, arg)
 
     def reject_minion(self, key):
         """Rejects minion from keystore.
         """
-        return self.key_store.reject(key, include_accepted=True)
+        pass
+        #return self.key_store.reject(key, include_accepted=True)
 
     def cmd_async(self, tgt, fun, arg=()):
         """Runs asynchronous command in minion.
         """
-        return self.client.cmd_async(tgt, fun, arg)
+        pass
+        #return self.client.cmd_async(tgt, fun, arg)
 
     @classmethod
     def subscribe_event(cls, jid, key, wait=SALT_EVENT_TIMEOUT,
@@ -116,7 +122,8 @@ class SaltHelper(object):
         err_msg = err_msg or "failed to execute command"
 
         tag = "salt/job/{}/ret/{}".format(jid, key)
-        ret = cls.event.get_event(wait=wait, tag=tag, full=True) or {}
+        #ret = cls.event.get_event(wait=wait, tag=tag, full=True) or {}
+        res = {}
 
         if not silent:
             if not ret:
