@@ -23,13 +23,9 @@ class OxidpSetup(OxSetup):
         self.render_server_xml_template()
         self.render_ldap_props_template()
         self.write_salt_file()
-        self.render_httpd_conf()
-        self.configure_vhost()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
-                      "www-data", "www-data", hostname)
 
         # IDP keystore
         self.gen_keystore(
@@ -175,49 +171,29 @@ class OxidpSetup(OxSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        payload = """
-[program:tomcat]
-command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID=/var/run/tomcat.pid
-
-[program:memcached]
-command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 0.0.0.0 -vv
-stdout_logfile=/var/log/memcached.log
-stderr_logfile=/var/log/memcached.log
-
-[program:nutcracker]
-command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log/nutcracker.log -v 11
-
-[program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
-"""
+        src_list = (
+            "_shared/tomcat.conf",
+            "oxidp/memcached.conf",
+            "oxidp/nutcracker.conf",
+        )
+        dest_list = (
+            "/etc/supervisor/conf.d/tomcat.conf",
+            "/etc/supervisor/conf.d/memcached.conf",
+            "/etc/supervisor/conf.d/nutcracker.conf",
+        )
 
         self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        for item in zip(src_list, dest_list):
+            self.copy_rendered_jinja_template(item[0], item[1])
 
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the container.
         """
-        src = "oxidp/server.xml"
+        src = "_shared/server.xml"
         dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
-    def render_httpd_conf(self):
-        """Copies rendered Apache2's virtual host into the container.
-        """
-        src = "oxidp/gluu_httpd.conf"
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
-
-        ctx = {
-            "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/httpd.crt",
-            "httpd_key_fn": "/etc/certs/httpd.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 

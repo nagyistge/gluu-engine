@@ -312,15 +312,10 @@ class LdapSetup(BaseSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        # add supervisord entry
-        payload = """
-[program:opendj]
-command=/opt/opendj/bin/start-ds --quiet -N
-"""
-
+        src = "opendj/opendj.conf"
+        dest = "/etc/supervisor/conf.d/opendj.conf"
         self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.copy_rendered_jinja_template(src, dest)
 
     def setup(self):
         """Runs the actual setup.

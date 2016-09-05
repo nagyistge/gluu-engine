@@ -14,7 +14,7 @@ class OxauthSetup(OxSetup):
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the container.
         """
-        src = "oxauth/server.xml"
+        src = "_shared/server.xml"
         dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
@@ -25,18 +25,10 @@ class OxauthSetup(OxSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        payload = """
-[program:tomcat]
-command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID=/var/run/tomcat.pid
-
-[program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
-"""
-
+        src = "_shared/tomcat.conf"
+        dest = "/etc/supervisor/conf.d/tomcat.conf"
         self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.copy_rendered_jinja_template(src, dest)
 
     def setup(self):
         hostname = self.container.hostname
@@ -45,15 +37,9 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.render_ldap_props_template()
         self.render_server_xml_template()
         self.render_oxauth_context()
-
         self.write_salt_file()
-        self.render_httpd_conf()
-        self.configure_vhost()
-
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
-                      "www-data", "www-data", hostname)
 
         self.gen_keystore(
             "shibIDP",
@@ -83,20 +69,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """
         complete_sgn = signal("ox_setup_completed")
         complete_sgn.send(self)
-
-    def render_httpd_conf(self):
-        """Copies rendered Apache2's virtual host into the container.
-        """
-        src = "oxauth/gluu_httpd.conf"
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
-
-        ctx = {
-            "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/httpd.crt",
-            "httpd_key_fn": "/etc/certs/httpd.key",
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_oxauth_context(self):
         """Renders oxAuth context file for Tomcat.

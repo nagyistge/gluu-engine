@@ -20,9 +20,6 @@ class NginxSetup(BaseSetup):
     def render_https_conf(self):
         """Copies rendered nginx virtual host config.
         """
-        def resolve_weave_ip(container_id):
-            return self.docker.get_container_ip(container_id)
-
         with self.app.app_context():
             oxauth_containers = []
             if self.cluster.count_containers("oxauth"):
@@ -60,13 +57,10 @@ class NginxSetup(BaseSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        payload = """
-[program:{}]
-command=/usr/sbin/nginx -g \\"daemon off;\\"
-""".format(self.container.type)
+        src = "nginx/nginx.conf"
+        dest = "/etc/supervisor/conf.d/nginx.conf"
         self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.copy_rendered_jinja_template(src, dest)
 
     def restart_nginx(self):
         """Restarts nginx via supervisorctl.
